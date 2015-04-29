@@ -107,8 +107,9 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					}
 				}
 				final long timeNow = System.nanoTime();
-				if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
+				if (context.getMaxSearchTimeForThisPos() - timeNow <= 2000000) {
 					//get OUT of here so we don't lose!!!
+					System.out.println("Time almost up, making any move we can!");
 					// System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
 					// +context.getMaxSearchTimeForThisPos()+") :time("
 					// +timeNow+"): recDepth("+context.getCurrentDepth()+")");
