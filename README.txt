@@ -24,4 +24,6 @@ We wanted to hardcode opening moves to reduce the search space (since we know fr
 
 There are many things we can do to make this more efficient, and in fact we have a lot of ideas but just haven't had the time to implement them since it took so long to make it functional. 
 
-At the end of everything, David thought it would be best to shift to a heuristic method, which seemed like a good idea given how bad our randomized move generator was going. The last copy of the code uses an updated randomized move generator, and a better implementation of hasJumps.
+At the end of everything, David thought it would be best to shift to a heuristic method, which seemed like a good idea given how bad our randomized move generator was going. The last copy of the code uses an updated randomized move generator, and a better implementation of hasJumps, along with a small heuristic that disfavors draws in the random move generator.
+
+Additionally, we want to state that we couldn't get the "multiple search context" part of the code to work with Checkers. This is why it's commented out.
