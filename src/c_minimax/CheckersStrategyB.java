@@ -33,13 +33,13 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					position.nR());
 			final InterfaceIterator destColorChecker = new CheckersIterator(
 					position.nC(), position.nR());
-
 			// TODO We're going to have to change how we iterate through the possible positions
 			// TODO we'll also have to check to see if positions are legal
+			//Strategy: Start near the middle, then fan out.
 			for (int currentMove = 0; currentMove < 256; currentMove++) {
 				// destColorChecker.set(iPos.dC(), iPos.dR(), 1, 1);
 				if (isLegalMove(position, iPos, destColorChecker, player)) {
-					System.out.println(currentMove + " is legal.");
+					System.out.println(currentMove + " is legal. Player=" + player);
 					if (searchResult.getBestMoveSoFar() == null)
 						searchResult.setBestMoveSoFar(iPos,
 								searchResult.getBestScoreSoFar());
@@ -106,52 +106,52 @@ public class CheckersStrategyB implements InterfaceStrategy {
 						break; //alpha-beta pruning
 					}
 				}
-				//				final long timeNow = System.nanoTime();
-				//				if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
-				//					//get OUT of here so we don't lose!!!
-				//					System.out.println("Time almost up, making any move we can!");
-				//					 System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
-				//					 +context.getMaxSearchTimeForThisPos()+") :time("
-				//					 +timeNow+"): recDepth("+context.getCurrentDepth()+")");
-				//					if (context.getCurrentDepth() == 0) {
-				//						// Revert back to a lesser search
-				//						System.out.print("CheckersStrategy: Depth limit of "
-				//								+ context.getMinDepthSearchForThisPos() + " -> ");
-				//						context.setMinDepthSearchForThisPos(context
-				//								.getMinDepthSearchForThisPos() - 1);
-				//						System.out.println(context.getMinDepthSearchForThisPos());
-				//					}
-				//					if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
-				//						searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
-				//								0.95f); // Set to original opponent almost-win
-				//					}
-				//					searchResult.setIsResultFinal(false);
-				//					break; // Need to make any move now
-				//				}
+				final long timeNow = System.nanoTime();
+				if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
+					//get OUT of here so we don't lose!!!
+					System.out.println("Time almost up, making any move we can!");
+					System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
+							+context.getMaxSearchTimeForThisPos()+") :time("
+							+timeNow+"): recDepth("+context.getCurrentDepth()+")");
+					if (context.getCurrentDepth() == 0) {
+						// Revert back to a lesser search
+						System.out.print("CheckersStrategy: Depth limit of "
+								+ context.getMinDepthSearchForThisPos() + " -> ");
+						context.setMinDepthSearchForThisPos(context
+								.getMinDepthSearchForThisPos() - 1);
+						System.out.println(context.getMinDepthSearchForThisPos());
+					}
+					if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
+						searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
+								0.95f); // Set to original opponent almost-win
+					}
+					searchResult.setIsResultFinal(false);
+					break; // Need to make any move now
+				}
 				iPos.increment();
 			}
 		}
 
-		// if we haven't run out of time yet, then increase the depth
-		final long timeLeftInNanoSeconds = context.getMaxSearchTimeForThisPos()
-				- System.nanoTime();
-		if (context.getCurrentDepth() == 0
-				&& !searchResult.isResultFinal()
-				&& timeLeftInNanoSeconds > ((CheckersSearchContext) context)
-				.getOriginalTimeLimit() * 9 / 10) {
-			System.out.print("CheckersStrategyB: Depth limit of "
-					+ context.getMinDepthSearchForThisPos() + " -> ");
-			context
-			.setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
-			System.out.println(context.getMinDepthSearchForThisPos());
-			final InterfaceSearchResult anotherResult = getBestMove(position, context);
-			if (anotherResult.getBestScoreSoFar() > searchResult.getBestScoreSoFar()) {
-				searchResult.setBestMoveSoFar(anotherResult.getBestMoveSoFar(),
-						anotherResult.getBestScoreSoFar());
-				searchResult.setIsResultFinal(anotherResult.isResultFinal());
-			}
-
-		}
+//		// if we haven't run out of time yet, then increase the depth
+//		final long timeLeftInNanoSeconds = context.getMaxSearchTimeForThisPos()
+//				- System.nanoTime();
+//		if (context.getCurrentDepth() == 0
+//				&& !searchResult.isResultFinal()
+//				&& timeLeftInNanoSeconds > ((CheckersSearchContext) context)
+//				.getOriginalTimeLimit() * 9 / 10) {
+//			System.out.print("CheckersStrategyB: Depth limit of "
+//					+ context.getMinDepthSearchForThisPos() + " -> ");
+//			context
+//			.setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
+//			System.out.println(context.getMinDepthSearchForThisPos());
+//			final InterfaceSearchResult anotherResult = getBestMove(position, context);
+//			if (anotherResult.getBestScoreSoFar() > searchResult.getBestScoreSoFar()) {
+//				searchResult.setBestMoveSoFar(anotherResult.getBestMoveSoFar(),
+//						anotherResult.getBestScoreSoFar());
+//				searchResult.setIsResultFinal(anotherResult.isResultFinal());
+//			}
+//
+//		}
 
 		return searchResult;
 
@@ -192,9 +192,9 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			while (!isFillable) {
 				int iC = rand.nextInt(8);
 				int iR = rand.nextInt(8);
+				iPos.set(iC, iR, iC-1, iR-1); //see above strategy
 				for (int dMove = 0; dMove < 8; dMove++) {
 					//go through the 8 potential destinations
-					iPos.set(iC, iR, iC-1, iR-1); //see above strategy
 					InterfaceIterator destChecker = new CheckersIterator(iPos.nC(), iPos.nR());
 					if (isLegalMove(posNew, iPos, destChecker, current_player)) {
 						//it's fillable, so let's put something in it
@@ -244,7 +244,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 		long seed = System.nanoTime(); // spawned at launch
 
 		/**
-		 * Gets a number in the range (1,max_exclusive), inclusive
+		 * Gets a number in the range (0,max_exclusive), exclusive
 		 * 
 		 * @param max_exclusive
 		 * @return
@@ -254,7 +254,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			seed ^= (seed >>> 35);
 			seed ^= (seed << 4);
 			// use Math.abs because Java is dumb and doesn't do unsigned longs
-			return (int) (Math.abs(seed % max_exclusive) + 1);
+			return (int) Math.abs(seed % max_exclusive);
 		}
 	}
 

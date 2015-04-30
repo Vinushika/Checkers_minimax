@@ -112,7 +112,8 @@ ThreadCompleteListener {
   @Override
   public void notifyOfThreadComplete(final Thread thread) {
     final InterfaceSearchResult result = ((ThreadStrategy) thread).getResult();
-    // System.out.println("Best move(Applct): c "+bestMove.iC()+", r "+bestMove.iR());
+    //System.out.println("Best move(Applct): c "+bestMove.iC()+", r "+bestMove.iR());
+    System.out.println("HERE");
     final int iR = result.getBestMoveSoFar().iR();
     final int iC = result.getBestMoveSoFar().iC();
     final int dR = result.getBestMoveSoFar().dR();
