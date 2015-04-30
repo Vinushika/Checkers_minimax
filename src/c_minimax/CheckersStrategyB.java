@@ -4,7 +4,9 @@ import java.util.Random;
 import java.util.TreeMap;
 
 public class CheckersStrategyB implements InterfaceStrategy {
-	TreeMap<Long, Integer> checkedPositions = new TreeMap<Long, Integer>(); // minor slowdown @16.7
+	TreeMap<Long, CheckersMove> checkedPositions = new TreeMap<Long, CheckersMove>();
+	//TODO: switch to mapDB to reduce memory usage...
+	// minor slowdown @16.7
 	// million (try mapDB?)
 	FastRandomizer rand = new FastRandomizer(); // automatic seeds anyway
 
@@ -17,29 +19,28 @@ public class CheckersStrategyB implements InterfaceStrategy {
 		final InterfaceSearchResult searchResult = new CheckersSearchResult();
 
 		// TODO Maybe remove this whole checkedPositions thing if we don't want to hash (without mapdb)
-		final Integer checkedResult = checkedPositions.get(position
+		final CheckersMove checkedResult = checkedPositions.get(position
 				.getRawPosition());
 		if (checkedResult != null) {
-			searchResult.setClassStateFromCompacted(checkedResult);
+			searchResult.setBestMoveSoFar(checkedResult.iterator, checkedResult.score);
 		} else { // position is not hashed, so let's see if we can process it
 
 			final int player = position.getPlayer();
 			final int opponent = 3 - player; // There are two players, 1 and 2.
 
-			final int nRandom = rand.nextInt(position.nC());
 			final float uncertaintyPenalty = .01f;
+			final InterfacePosition posNew = new CheckersPosition(position);
+			final InterfaceIterator iPos = new CheckersIterator(position.nC(),
+					position.nR());
+			final InterfaceIterator destColorChecker = new CheckersIterator(
+					position.nC(), position.nR());
 
 			// TODO We're going to have to change how we iterate through the possible positions
 			// TODO we'll also have to check to see if positions are legal
-			for (int iC_raw = 0; iC_raw < position.nC(); iC_raw++) {
-				final int iC = (iC_raw + nRandom) % position.nC();
-				final InterfacePosition posNew = new CheckersPosition(position);
-				final InterfaceIterator iPos = new CheckersIterator(position.nC(),
-						position.nR());
-				iPos.set(iC, 0);
-				final int iR = position.nR() - posNew.getChipCount(iPos) - 1;
-				iPos.set(iC, iR);
-				if (iR >= 0) { // The column is not yet full
+			for (int currentMove = 0; currentMove < 256; currentMove++) {
+				// destColorChecker.set(iPos.dC(), iPos.dR(), 1, 1);
+				if (isLegalMove(position, iPos, destColorChecker, player)) {
+					System.out.println(currentMove + " is legal.");
 					if (searchResult.getBestMoveSoFar() == null)
 						searchResult.setBestMoveSoFar(iPos,
 								searchResult.getBestScoreSoFar());
@@ -94,7 +95,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 							searchResult.setIsResultFinal(false);
 						}
 					}
-
+					System.out.println(searchResult.getBestScoreSoFar());
 					if (searchResult.getBestMoveSoFar() == null
 							|| searchResult.getBestScoreSoFar() < score) {
 						searchResult.setBestMoveSoFar(iPos, score);
@@ -110,9 +111,9 @@ public class CheckersStrategyB implements InterfaceStrategy {
 				if (context.getMaxSearchTimeForThisPos() - timeNow <= 2000000) {
 					//get OUT of here so we don't lose!!!
 					System.out.println("Time almost up, making any move we can!");
-					// System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
-					// +context.getMaxSearchTimeForThisPos()+") :time("
-					// +timeNow+"): recDepth("+context.getCurrentDepth()+")");
+					 System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
+					 +context.getMaxSearchTimeForThisPos()+") :time("
+					 +timeNow+"): recDepth("+context.getCurrentDepth()+")");
 					if (context.getCurrentDepth() == 0) {
 						// Revert back to a lesser search
 						System.out.print("CheckersStrategy: Depth limit of "
@@ -128,6 +129,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					searchResult.setIsResultFinal(false);
 					break; // Need to make any move now
 				}
+				iPos.increment();
 			}
 		}
 
@@ -149,6 +151,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 						anotherResult.getBestScoreSoFar());
 				searchResult.setIsResultFinal(anotherResult.isResultFinal());
 			}
+
 		}
 
 		return searchResult;
@@ -176,28 +179,60 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			boolean isFillable = false;
 			int final_iC = -1;
 			int final_iR = -1;
+			int final_dC = 0;
+			int final_dR = 0;
+			//strategy for the checkers random move:
+			//we know iC and iR go from 1 to 8, and iR goes from 1 to 8
+			//therefore pick a random iC and iR from 1 to 8,
+			//and set dC and dR to iC -1, iR-1 (since destinationIterator = 1 when you do this)
+			//then, check the 8 positions around it (do a forloop with 8 iterations)
+			//If you can fill the position, fill it immediately. Otherwise, 
+			//then just pick a new random location.
 			final InterfaceIterator iPos = new CheckersIterator(posNew.nC(),
 					posNew.nR());
 			while (!isFillable) {
-				final int nRandom = rand.nextInt(posNew.nC()); // generate random integer for column
-				iPos.set(nRandom, 0); // check the first row associated to the column
-				final int iR = posNew.nR() - posNew.getChipCount(iPos) - 1; // see if the column isn't full
-				iPos.set(nRandom, iR);
-				if (iR >= 0) {
-					// it's fillable, so let's put something in it
-					isFillable = true;
-					final_iR = iR;
-					final_iC = nRandom;
-					break; // defensive programming
+				int iC = rand.nextInt(8);
+				int iR = rand.nextInt(8);
+				for (int dMove = 0; dMove < 8; dMove++) {
+					//go through the 8 potential destinations
+					iPos.set(iC, iR, iC-1, iR-1); //see above strategy
+					InterfaceIterator destChecker = new CheckersIterator(iPos.nC(), iPos.nR());
+					if (isLegalMove(posNew, iPos, destChecker, current_player)) {
+						//it's fillable, so let's put something in it
+						isFillable = true;
+						final_iR = iR;
+						final_iC = iC;
+						final_dC = iPos.dC();
+						final_dR = iPos.dR();
+						break; // defensive programming
+					}
+					iPos.increment(); //if we haven't broken yet, try a new one.
 				}
+				// we have a playable position, let's play it
+				posNew.setPlayer(current_player);
+				iPos.set(final_iC, final_iR, final_dC, final_dR);
+				posNew.setColor(iPos, current_player);
+				current_player = 3 - current_player;
 			}
-			// we have a playable position, let's play it
-			posNew.setPlayer(current_player);
-			iPos.set(final_iC, final_iR);
-			posNew.setColor(iPos, current_player);
-			current_player = 3 - current_player;
 		}
 		return posNew.isWinner();
+	}
+
+
+	public boolean isLegalMove(final InterfacePosition position,
+			final InterfaceIterator iPos, final InterfaceIterator destColorChecker,
+			final int player) {
+		if (iPos.isDestinationInBounds()) {
+			destColorChecker.set(iPos.dC(), iPos.dR(), 1, 1);
+			if (position.getColor(destColorChecker) == 0) {
+				if (position.getColor(iPos) == player) {
+					if ((Math.abs(iPos.iC() - iPos.dC()) == 1)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -210,7 +245,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 		long seed = System.nanoTime(); // spawned at launch
 
 		/**
-		 * Gets a number in the range (0,max_exclusive), exclusive
+		 * Gets a number in the range (1,max_exclusive), inclusive
 		 * 
 		 * @param max_exclusive
 		 * @return
@@ -220,7 +255,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			seed ^= (seed >>> 35);
 			seed ^= (seed << 4);
 			// use Math.abs because Java is dumb and doesn't do unsigned longs
-			return (int) Math.abs(seed % max_exclusive);
+			return (int) (Math.abs(seed % max_exclusive) + 1);
 		}
 	}
 
@@ -312,7 +347,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 		@Override
 		public void setBestMoveSoFar(final InterfaceIterator newMove,
 				final float newScore) {
-			bestMoveSoFar = new CheckersIterator(newMove.nC(), newMove.nR());
+			bestMoveSoFar = newMove;
 			bestScoreSoFar = (short) (newScore * (1 << 14));
 		}
 

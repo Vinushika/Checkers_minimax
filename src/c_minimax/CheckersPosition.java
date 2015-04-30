@@ -104,7 +104,7 @@ public class CheckersPosition implements InterfacePosition {
     @Override
     public int isWinner(InterfaceIterator iPos) {
         // TODO Auto-generated method stub
-        return 0;
+    	return -1;
     }
 
     @Override
