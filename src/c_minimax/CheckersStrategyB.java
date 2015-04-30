@@ -10,6 +10,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 	// minor slowdown @16.7
 	// million (try mapDB?)
 	FastRandomizer rand = new FastRandomizer(); // automatic seeds anyway
+	static final float DRAW_PENALTY = 0.5f; //penalizes draws
 
 	@Override
 	public InterfaceSearchResult getBestMove(final InterfacePosition position,
@@ -67,6 +68,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					iPos.increment();
 				}
 			}
+			pieceMoves.sort(new CheckersMoveComparator());
 			for (final InterfaceIterator pieceMove : pieceMoves) {
 				// System.out.println("is in piece move loop");
 				if (isLegalMove(position, pieceMove, destColorChecker, player)) {
@@ -108,6 +110,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 							// play n random boards, collect score
 							int numWin = 0;
 							int numLose = 0;
+							int numDraws = 0;
 							final float total_plays = 30.0f; // change this if we ever want to play less or
 							//              // more
 							for (int i = 0; i < total_plays; i++) {
@@ -119,9 +122,11 @@ public class CheckersStrategyB implements InterfaceStrategy {
 								} else if (winner == opponent) {
 									// we lose!
 									numLose++;
+								}else {
+									numDraws++;
 								}
 							}
-							score = (numWin - numLose) / total_plays;
+							score = (numWin - numLose - (DRAW_PENALTY * numDraws)) / total_plays;
 							//score = -uncertaintyPenalty;
 							searchResult.setIsResultFinal(false);
 						}
