@@ -52,9 +52,7 @@ public class Connect4StrategyB implements InterfaceStrategy {
       final InterfacePosition posNew = new Connect4Position(position);
       final InterfaceIterator iPos = new Connect4Iterator(position.nC(),
           position.nR());
-      iPos.set(iC, 0);
       final int iR = position.nR() - posNew.getChipCount(iPos) - 1;
-      iPos.set(iC, iR);
       if (iR >= 0) { // The column is not yet full
         if (searchResult.getBestMoveSoFar() == null)
           searchResult.setBestMoveSoFar(iPos, searchResult.getBestScoreSoFar());
@@ -71,7 +69,7 @@ public class Connect4StrategyB implements InterfaceStrategy {
 
           if (context.getCurrentDepth() < context.getMaxDepthSearchForThisPos()
               && context.getCurrentDepth() < context
-                  .getMinDepthSearchForThisPos()) {
+              .getMinDepthSearchForThisPos()) {
             posNew.setPlayer(opponent);
             context.setCurrentDepth(context.getCurrentDepth() + 1);
             final InterfaceSearchResult opponentResult = negamax(posNew,
@@ -143,11 +141,11 @@ public class Connect4StrategyB implements InterfaceStrategy {
       final long timeNow = System.nanoTime();
       if (context.getMaxSearchTimeForThisPos() - timeNow <= 0) {
         System.out
-            .println("Connect4Strategy:getBestMove(): ran out of time: maxTime("
-                + context.getMaxSearchTimeForThisPos()
-                + ") :time("
-                + timeNow
-                + "): recDepth(" + context.getCurrentDepth() + ")");
+        .println("Connect4Strategy:getBestMove(): ran out of time: maxTime("
+            + context.getMaxSearchTimeForThisPos()
+            + ") :time("
+            + timeNow
+            + "): recDepth(" + context.getCurrentDepth() + ")");
         if (context.getCurrentDepth() == 0) {
           // Revert back to a lesser search
           System.out.print("Connect4Strategy: Depth limit of "
@@ -186,14 +184,14 @@ public class Connect4StrategyB implements InterfaceStrategy {
     if (context.getCurrentDepth() == 0
         && !searchResult.isResultFinal()
         && timeLeftInNanoSeconds > ((Connect4SearchContext) context)
-        .getOriginalTimeLimit() * 9 / 10) { // TODO:
+            .getOriginalTimeLimit() * 9 / 10) { // TODO:
       // add
       // to
       // interface
       System.out.print("Connect4StrategyB: Depth limit of "
           + context.getMinDepthSearchForThisPos() + " -> ");
       context
-      .setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
+          .setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
       System.out.println(context.getMinDepthSearchForThisPos());
       final InterfaceSearchResult anotherResult = negamax(position, context,
           Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
@@ -215,8 +213,9 @@ public class Connect4StrategyB implements InterfaceStrategy {
     // draws are taken out of the equation
     // this should never be called starting from a position with no fillable
     // spots
-    int current_player = 3 - player;
-    final InterfacePosition posNew = new Connect4Position(pos);
+    return 0;
+    /*int current_player = 3 - player;
+    final InterfacePosition posNew = new CheckersPosition(pos);
     while (posNew.isWinner() == -1) {
       // find a position that is playable by iterating through the columns
       boolean isFillable = false;
@@ -225,7 +224,7 @@ public class Connect4StrategyB implements InterfaceStrategy {
       final InterfaceIterator iPos = new Connect4Iterator(posNew.nC(),
           posNew.nR());
       while (!isFillable) {
-        final int randomIndex = rand.nextInt(32); // generate random integer
+        final int randomIndex = rand.nextInt(8); // generate random integer
         // for column
         final int nRandom = probability_distribution[randomIndex];
         iPos.set(nRandom, 0); // check the first row associated to the
@@ -250,7 +249,7 @@ public class Connect4StrategyB implements InterfaceStrategy {
       posNew.setColor(iPos, current_player);
       current_player = 3 - current_player;
     }
-    return posNew.isWinner();
+    return posNew.isWinner();*/
   }
 
   @Override
