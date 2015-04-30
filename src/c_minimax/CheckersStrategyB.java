@@ -1,6 +1,5 @@
 package c_minimax;
 
-import java.util.Random;
 import java.util.TreeMap;
 
 public class CheckersStrategyB implements InterfaceStrategy {
