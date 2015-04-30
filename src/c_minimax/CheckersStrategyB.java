@@ -106,28 +106,28 @@ public class CheckersStrategyB implements InterfaceStrategy {
 						break; //alpha-beta pruning
 					}
 				}
-				final long timeNow = System.nanoTime();
-				if (context.getMaxSearchTimeForThisPos() - timeNow <= 2000000) {
-					//get OUT of here so we don't lose!!!
-					System.out.println("Time almost up, making any move we can!");
-					 System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
-					 +context.getMaxSearchTimeForThisPos()+") :time("
-					 +timeNow+"): recDepth("+context.getCurrentDepth()+")");
-					if (context.getCurrentDepth() == 0) {
-						// Revert back to a lesser search
-						System.out.print("CheckersStrategy: Depth limit of "
-								+ context.getMinDepthSearchForThisPos() + " -> ");
-						context.setMinDepthSearchForThisPos(context
-								.getMinDepthSearchForThisPos() - 1);
-						System.out.println(context.getMinDepthSearchForThisPos());
-					}
-					if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
-						searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
-								0.95f); // Set to original opponent almost-win
-					}
-					searchResult.setIsResultFinal(false);
-					break; // Need to make any move now
-				}
+				//				final long timeNow = System.nanoTime();
+				//				if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
+				//					//get OUT of here so we don't lose!!!
+				//					System.out.println("Time almost up, making any move we can!");
+				//					 System.out.println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
+				//					 +context.getMaxSearchTimeForThisPos()+") :time("
+				//					 +timeNow+"): recDepth("+context.getCurrentDepth()+")");
+				//					if (context.getCurrentDepth() == 0) {
+				//						// Revert back to a lesser search
+				//						System.out.print("CheckersStrategy: Depth limit of "
+				//								+ context.getMinDepthSearchForThisPos() + " -> ");
+				//						context.setMinDepthSearchForThisPos(context
+				//								.getMinDepthSearchForThisPos() - 1);
+				//						System.out.println(context.getMinDepthSearchForThisPos());
+				//					}
+				//					if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
+				//						searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
+				//								0.95f); // Set to original opponent almost-win
+				//					}
+				//					searchResult.setIsResultFinal(false);
+				//					break; // Need to make any move now
+				//				}
 				iPos.increment();
 			}
 		}
@@ -207,12 +207,12 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					}
 					iPos.increment(); //if we haven't broken yet, try a new one.
 				}
-				// we have a playable position, let's play it
-				posNew.setPlayer(current_player);
-				iPos.set(final_iC, final_iR, final_dC, final_dR);
-				posNew.setColor(iPos, current_player);
-				current_player = 3 - current_player;
 			}
+			// we have a playable position, let's play it
+			posNew.setPlayer(current_player);
+			iPos.set(final_iC, final_iR, final_dC, final_dR);
+			posNew.setColor(iPos, current_player);
+			current_player = 3 - current_player;
 		}
 		return posNew.isWinner();
 	}
