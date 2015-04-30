@@ -132,26 +132,26 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			}
 		}
 
-//		// if we haven't run out of time yet, then increase the depth
-//		final long timeLeftInNanoSeconds = context.getMaxSearchTimeForThisPos()
-//				- System.nanoTime();
-//		if (context.getCurrentDepth() == 0
-//				&& !searchResult.isResultFinal()
-//				&& timeLeftInNanoSeconds > ((CheckersSearchContext) context)
-//				.getOriginalTimeLimit() * 9 / 10) {
-//			System.out.print("CheckersStrategyB: Depth limit of "
-//					+ context.getMinDepthSearchForThisPos() + " -> ");
-//			context
-//			.setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
-//			System.out.println(context.getMinDepthSearchForThisPos());
-//			final InterfaceSearchResult anotherResult = getBestMove(position, context);
-//			if (anotherResult.getBestScoreSoFar() > searchResult.getBestScoreSoFar()) {
-//				searchResult.setBestMoveSoFar(anotherResult.getBestMoveSoFar(),
-//						anotherResult.getBestScoreSoFar());
-//				searchResult.setIsResultFinal(anotherResult.isResultFinal());
-//			}
-//
-//		}
+		//		// if we haven't run out of time yet, then increase the depth
+		//		final long timeLeftInNanoSeconds = context.getMaxSearchTimeForThisPos()
+		//				- System.nanoTime();
+		//		if (context.getCurrentDepth() == 0
+		//				&& !searchResult.isResultFinal()
+		//				&& timeLeftInNanoSeconds > ((CheckersSearchContext) context)
+		//				.getOriginalTimeLimit() * 9 / 10) {
+		//			System.out.print("CheckersStrategyB: Depth limit of "
+		//					+ context.getMinDepthSearchForThisPos() + " -> ");
+		//			context
+		//			.setMinDepthSearchForThisPos(context.getMinDepthSearchForThisPos() + 1);
+		//			System.out.println(context.getMinDepthSearchForThisPos());
+		//			final InterfaceSearchResult anotherResult = getBestMove(position, context);
+		//			if (anotherResult.getBestScoreSoFar() > searchResult.getBestScoreSoFar()) {
+		//				searchResult.setBestMoveSoFar(anotherResult.getBestMoveSoFar(),
+		//						anotherResult.getBestScoreSoFar());
+		//				searchResult.setIsResultFinal(anotherResult.isResultFinal());
+		//			}
+		//
+		//		}
 
 		return searchResult;
 
@@ -222,14 +222,29 @@ public class CheckersStrategyB implements InterfaceStrategy {
 			final InterfaceIterator iPos, final InterfaceIterator destColorChecker,
 			final int player) {
 		if (iPos.isDestinationInBounds()) {
-			destColorChecker.set(iPos.dC(), iPos.dR(), 1, 1);
-			if (position.getColor(destColorChecker) == 0) {
-				if (position.getColor(iPos) == player) {
-					if ((Math.abs(iPos.iC() - iPos.dC()) == 1)) {
-						return true;
+			int dC = iPos.dC();
+			int dR = iPos.dR();
+			destColorChecker.set(dC, dR, 1, 1);
+			if (Math.abs(dC - iPos.iC()) == 1) {
+				if (position.getColor(destColorChecker) == 0) {
+					if (position.getColor(iPos) == player) {
+						//	if white, can only move forward.
+						//if black, can only move backward
+						if (player == 1) {
+							if (iPos.dC() - iPos.iC() > 0) {
+								//destination reachable, can move forward.
+								return true;
+							}
+						} else if (player == 2) {
+							if (iPos.dC() - iPos.iC() < 0) {
+								//destination reachable, can move "backward"
+								return true;
+							}
+						}
 					}
 				}
 			}
+			//if it's 2, do stuff.
 		}
 		return false;
 	}
