@@ -131,7 +131,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 							searchResult.setIsResultFinal(false);
 						}
 					}
-					System.out.println(searchResult.getBestScoreSoFar());
+//					System.out.println(searchResult.getBestScoreSoFar());
 					if (searchResult.getBestMoveSoFar() == null
 							|| searchResult.getBestScoreSoFar() < score) {
 						searchResult.setBestMoveSoFar(pieceMove, score);
@@ -142,7 +142,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 					if (alpha >= beta) {
 						break; // alpha-beta pruning
 					}
-					System.out.println(searchResult.getBestScoreSoFar());
+//					System.out.println(searchResult.getBestScoreSoFar());
 				}
 				final long timeNow = System.nanoTime();
 				if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
@@ -172,7 +172,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 
 			}
 		}
-		System.out.println("Returning...");
+//		System.out.println("Returning...");
 		return searchResult;
 
 		// // if we haven't run out of time yet, then increase the depth
