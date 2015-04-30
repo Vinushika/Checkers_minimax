@@ -14,7 +14,7 @@ public class CheckersPosition implements InterfacePosition {
     // The  last 3 rows are filled by Player 1
     // The first 3 rows are filled by Player 2
     // It's Player 1's turn.
-    private final static long STARTING_POSITION = 926508351565160L;
+    private final static long STARTING_POSITION = 2779528540417001L;
 
     private long position = STARTING_POSITION;
     private int nC = 0;
@@ -109,7 +109,6 @@ public class CheckersPosition implements InterfacePosition {
 
     @Override
     public int isWinner() {
-        printMe();
         int topRow = 0;
         int bottomRow = nR - 1;
 

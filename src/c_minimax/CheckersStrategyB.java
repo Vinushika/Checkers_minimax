@@ -59,7 +59,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
 								.getMinDepthSearchForThisPos()) { // No more than min
 							posNew.setPlayer(opponent);
 							context.setCurrentDepth(context.getCurrentDepth() + 1);
-							final InterfaceSearchResult opponentResult = getBestMove(posNew,
+							final InterfaceSearchResult opponentResult = negamax(posNew,
 									context, -alpha, -beta); // Return information is in opponentContext
 							context.setCurrentDepth(context.getCurrentDepth() - 1);
 							score = -opponentResult.getBestScoreSoFar();
