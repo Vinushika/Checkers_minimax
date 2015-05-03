@@ -12,6 +12,35 @@ public class CheckersStrategyB implements InterfaceStrategy {
   FastRandomizer rand = new FastRandomizer(); // automatic seeds anyway
   static final float DRAW_PENALTY = 0.5f; // penalizes draws
 
+  public float heuristicScore(final InterfacePosition position,
+      final Integer player) {
+    final InterfaceIterator iPos = new CheckersIterator(position.nC(),
+        position.nR());
+    final float CHANGEAMOUNT = .0625f;
+    float score = 0f;
+    for (int currentPiece = 0; currentPiece < 32; currentPiece++) {
+      final int color = position.getColor(iPos);
+      if (color == 0) {
+
+      } else {
+        if (color == player) {
+          score += CHANGEAMOUNT + currentPiece / 33;
+        } else {
+          score -= CHANGEAMOUNT + currentPiece / 33;
+        }
+      }
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+      iPos.increment();
+    }
+    return score / 2;
+  }
+
   @Override
   public InterfaceSearchResult getBestMove(final InterfacePosition position,
       final InterfaceSearchContext context) {
@@ -23,7 +52,7 @@ public class CheckersStrategyB implements InterfaceStrategy {
       final InterfaceSearchContext context, float alpha, final float beta) {
     final InterfaceSearchResult searchResult = new CheckersSearchResult();
 
-    // TODO Maybe remove this whole checkedPositions thing if we don't want to hash (without mapdb)
+    // TODO Maybe remove Fthis whole checkedPositions thing if we don't want to hash (without mapdb)
     final CheckersMove checkedResult = checkedPositions.get(position
         .getRawPosition());
     if (checkedResult != null) {
@@ -79,6 +108,8 @@ public class CheckersStrategyB implements InterfaceStrategy {
             searchResult.setBestMoveSoFar(pieceMove,
                 searchResult.getBestScoreSoFar());
           posNew.setColor(pieceMove, player);
+          // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
+          // + pieceMove.dC() + "," + pieceMove.dR());
           final int isWin = posNew.isWinner(pieceMove); // iPos
           float score;
           if (isWin == player) {
@@ -109,27 +140,33 @@ public class CheckersStrategyB implements InterfaceStrategy {
             } else {
               // We cannot recurse further down the minimax search
               // play n random boards, collect score
-              int numWin = 0;
-              int numLose = 0;
-              int numDraws = 0;
-              final float total_plays = 30.0f; // change this if we ever want to play less or
-              // // more
-              for (int i = 0; i < total_plays; i++) {
-                final int winner = playRandomlyUntilEnd(posNew, player);
-                // ok, we have an end state.
-                if (winner == player) {
-                  // we win!
-                  numWin++;
-                } else if (winner == opponent) {
-                  // we lose!
-                  numLose++;
-                } else {
-                  numDraws++;
-                }
-              }
-              score = (numWin - numLose - (DRAW_PENALTY * numDraws))
-                  / total_plays;
+              // int numWin = 0;
+              // int numLose = 0;
+              // int numDraws = 0;
+              // final float total_plays = 30.0f; // change this if we ever want to play less or
+              // // // more
+              // for (int i = 0; i < total_plays; i++) {
+              // final int winner = playRandomlyUntilEnd(posNew, player);
+              // // ok, we have an end state.
+              // if (winner == player) {
+              // // we win!
+              // numWin++;
+              // } else if (winner == opponent) {
+              // // we lose!
+              // numLose++;
+              // } else {
+              // numDraws++;
+              // }
+              // }
+              // score = (numWin - numLose - (DRAW_PENALTY * numDraws))
+              // / total_plays;
               // score = -uncertaintyPenalty;
+              final int winner = posNew.isWinner();
+              if (winner == -1) {
+                score = heuristicScore(posNew, player);
+              } else {
+                score = winner;
+              }
               searchResult.setIsResultFinal(false);
             }
           }
@@ -146,31 +183,31 @@ public class CheckersStrategyB implements InterfaceStrategy {
           }
           // System.out.println(searchResult.getBestScoreSoFar());
         }
-        // final long timeNow = System.nanoTime();
-        // if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
-        // // get OUT of here so we don't lose!!!
-        // System.out.println("Time almost up, making any move we can!");
-        // System.out
-        // .println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
-        // + context.getMaxSearchTimeForThisPos()
-        // + ") :time("
-        // + timeNow
-        // + "): recDepth(" + context.getCurrentDepth() + ")");
-        // if (context.getCurrentDepth() == 0) {
-        // // Revert back to a lesser search
-        // System.out.print("CheckersStrategy: Depth limit of "
-        // + context.getMinDepthSearchForThisPos() + " -> ");
-        // context.setMinDepthSearchForThisPos(context
-        // .getMinDepthSearchForThisPos() - 1);
-        // System.out.println(context.getMinDepthSearchForThisPos());
-        // }
-        // if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
-        // searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
-        // 0.95f); // Set to original opponent almost-win
-        // }
-        // searchResult.setIsResultFinal(false);
-        // break; // Need to make any move now
-        // }
+        final long timeNow = System.nanoTime();
+        if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
+          // get OUT of here so we don't lose!!!
+          System.out.println("Time almost up, making any move we can!");
+          System.out
+              .println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
+                  + context.getMaxSearchTimeForThisPos()
+                  + ") :time("
+                  + timeNow
+                  + "): recDepth(" + context.getCurrentDepth() + ")");
+          if (context.getCurrentDepth() == 0) {
+            // Revert back to a lesser search
+            System.out.print("CheckersStrategy: Depth limit of "
+                + context.getMinDepthSearchForThisPos() + " -> ");
+            context.setMinDepthSearchForThisPos(context
+                .getMinDepthSearchForThisPos() - 1);
+            System.out.println(context.getMinDepthSearchForThisPos());
+          }
+          if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
+            searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
+                0.95f); // Set to original opponent almost-win
+          }
+          searchResult.setIsResultFinal(false);
+          break; // Need to make any move now
+        }
 
       }
     }
@@ -299,11 +336,27 @@ public class CheckersStrategyB implements InterfaceStrategy {
   public boolean isLegalJump(final InterfacePosition position,
       final InterfaceIterator iPos, final InterfaceIterator destColorChecker,
       final int player) {
+    // final InterfaceIterator pieceMove = iPos;
+    // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
+    // + pieceMove.dC() + "," + pieceMove.dR());
     final int takenCol = (iPos.dC() + iPos.iC()) / 2;
     final int takenRow = (iPos.dR() + iPos.iR()) / 2;
+    // System.out.println(takenCol + "," + takenRow + " will be jumped");
 
     if (!iPos.isDestinationInBounds()) {
       return false;
+    }
+
+    if (player == 1) {
+      if (iPos.dR() - iPos.iR() > 0) {
+        // destination reachable, can move backward.
+        return false;
+      }
+    } else if (player == 2) {
+      if (iPos.dR() - iPos.iR() < 0) {
+        // destination reachable, can move "forward"
+        return false;
+      }
     }
 
     // check that the moving piece is owned by the player
@@ -319,12 +372,12 @@ public class CheckersStrategyB implements InterfaceStrategy {
 
     // piece being jumped is the enemy
     destColorChecker.set(takenCol, takenRow, 1, 1);
-    if (position.getColor(destColorChecker) == 3 - player) {
-      return true;
+    if (position.getColor(destColorChecker) != (3 - player)) {
+      return false;
     }
 
     // otherwise false
-    return false;
+    return true;
   }
 
   public boolean hasJumps(final InterfacePosition position,
