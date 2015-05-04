@@ -2,10 +2,25 @@ package c_minimax;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeMap;
+
+// uncomment to hash
+//import org.mapdb.DB;
+//import org.mapdb.DBMaker;
+//import org.mapdb.HTreeMap;
+//import org.mapdb.Serializer;
 
 public class CheckersStrategyB implements InterfaceStrategy {
-  TreeMap<Long, CheckersMove> checkedPositions = new TreeMap<Long, CheckersMove>();
+  // uncomment to hash
+  // static DB db = DBMaker.newFileDB(new File("testdb")).closeOnJvmShutdown()
+  // .encryptionEnable("password").make();
+  // static HTreeMap<Long, CheckersMove> checkedPositions = db
+  // .createHashMap("checkedPositions").keySerializer(Serializer.LONG)
+  // .valueSerializer(Serializer.JAVA).makeOrGet();
+
+  // open existing an collection (or create new)
+  // ConcurrentNavigableMap<Long, CheckersMove> checkedPositions = db
+  // .getTreeMap("collectionName");
+  // TreeMap<Long, CheckersMove> checkedPositions = new TreeMap<Long, CheckersMove>();
   // TODO: switch to mapDB to reduce memory usage...
   // minor slowdown @16.7
   // million (try mapDB?)
@@ -53,164 +68,171 @@ public class CheckersStrategyB implements InterfaceStrategy {
     final InterfaceSearchResult searchResult = new CheckersSearchResult();
 
     // TODO Maybe remove Fthis whole checkedPositions thing if we don't want to hash (without mapdb)
-    final CheckersMove checkedResult = checkedPositions.get(position
-        .getRawPosition());
-    if (checkedResult != null) {
-      searchResult
-          .setBestMoveSoFar(checkedResult.iterator, checkedResult.score);
-    } else { // position is not hashed, so let's see if we can process it
+    // uncomment to hash
+    // final CheckersMove checkedResult = checkedPositions.get(position.getRawPosition());
+    // if (checkedResult != null) {
+    // searchResult
+    // .setBestMoveSoFar(checkedResult.iterator, checkedResult.score);
+    // } else { // position is not hashed, so let's see if we can process it
 
-      final int player = position.getPlayer();
-      final int opponent = 3 - player; // There are two players, 1 and 2.
+    final int player = position.getPlayer();
+    final int opponent = 3 - player; // There are two players, 1 and 2.
 
-      final float uncertaintyPenalty = .01f;
-      final InterfacePosition posNew = new CheckersPosition(position);
-      final InterfaceIterator iPos = new CheckersIterator(position.nC(),
-          position.nR());
-      final InterfaceIterator destColorChecker = new CheckersIterator(
-          position.nC(), position.nR());
-      // TODO We're going to have to change how we iterate through the possible positions
-      // TODO we'll also have to check to see if positions are legal
-      // Strategy: Start near the middle, then fan out.
-      final List<InterfaceIterator> pieceMoves = new ArrayList<InterfaceIterator>();
-      for (int currentPiece = 0; currentPiece < 32; currentPiece++) {
-        // System.out.println("itterating through pieces, player is "
-        // + position.getColor(iPos));
-        if (position.getColor(iPos) == player) {
-          for (int pieceMove = 0; pieceMove < 8; pieceMove++) {
-            // System.out.println("iterating through piece moves");
-            final InterfaceIterator newIPos = new CheckersIterator(
-                position.nC(), position.nR());
-            newIPos.set(iPos);
-            pieceMoves.add(newIPos);
-            iPos.increment();
-          }
-        } else {
-          // iterate through the eight moves for the piece that isn't ours
-          iPos.increment();
-          iPos.increment();
-          iPos.increment();
-          iPos.increment();
-          iPos.increment();
-          iPos.increment();
-          iPos.increment();
+    final float uncertaintyPenalty = .01f;
+    final InterfacePosition posNew = new CheckersPosition(position);
+    final InterfaceIterator iPos = new CheckersIterator(position.nC(),
+        position.nR());
+    final InterfaceIterator destColorChecker = new CheckersIterator(
+        position.nC(), position.nR());
+    // TODO We're going to have to change how we iterate through the possible positions
+    // TODO we'll also have to check to see if positions are legal
+    // Strategy: Start near the middle, then fan out.
+    final List<InterfaceIterator> pieceMoves = new ArrayList<InterfaceIterator>();
+    for (int currentPiece = 0; currentPiece < 32; currentPiece++) {
+      // System.out.println("itterating through pieces, player is "
+      // + position.getColor(iPos));
+      if (position.getColor(iPos) == player) {
+        for (int pieceMove = 0; pieceMove < 8; pieceMove++) {
+          // System.out.println("iterating through piece moves");
+          final InterfaceIterator newIPos = new CheckersIterator(position.nC(),
+              position.nR());
+          newIPos.set(iPos);
+          pieceMoves.add(newIPos);
           iPos.increment();
         }
-      }
-      pieceMoves.sort(new CheckersMoveComparator());
-      final boolean hasJump = hasJumps(position, destColorChecker, player);
-      for (final InterfaceIterator pieceMove : pieceMoves) {
-        // System.out.println("is in piece move loop");
-        if (isLegalMove(position, pieceMove, destColorChecker, player, hasJump)) {
-          // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
-          // + pieceMove.dC() + "," + pieceMove.dR() + " is legal move.");
-          if (searchResult.getBestMoveSoFar() == null)
-            searchResult.setBestMoveSoFar(pieceMove,
-                searchResult.getBestScoreSoFar());
-          posNew.setColor(pieceMove, player);
-          // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
-          // + pieceMove.dC() + "," + pieceMove.dR());
-          final int isWin = posNew.isWinner(pieceMove); // iPos
-          float score;
-          if (isWin == player) {
-            score = 1f; // Win
-          } else if (isWin == 0) {
-            score = 0f; // Draw
-          } else if (isWin == opponent) {
-            score = -1f; // Loss
-          } else { // Game is not over, so check further down the game
-            if (context.getCurrentDepth() < context
-                .getMaxDepthSearchForThisPos() && // No more than max
-                context.getCurrentDepth() < context
-                    .getMinDepthSearchForThisPos()) { // No more than min
-              posNew.setPlayer(opponent);
-              context.setCurrentDepth(context.getCurrentDepth() + 1);
-              final InterfaceSearchResult opponentResult = negamax(posNew,
-                  context, -alpha, -beta); // Return information is in opponentContext
-              context.setCurrentDepth(context.getCurrentDepth() - 1);
-              score = -opponentResult.getBestScoreSoFar();
-              // Note, for player, opponent's best move has negative worth
-              // That is because, score = ((probability of win) - (probability of loss))
-
-              if (opponentResult.isResultFinal() == false) { // if the result is not final, reverse
-                // penalty
-                searchResult.setIsResultFinal(false);
-                score -= 2 * uncertaintyPenalty;
-              }
-            } else {
-              // We cannot recurse further down the minimax search
-              // play n random boards, collect score
-              // int numWin = 0;
-              // int numLose = 0;
-              // int numDraws = 0;
-              // final float total_plays = 30.0f; // change this if we ever want to play less or
-              // // // more
-              // for (int i = 0; i < total_plays; i++) {
-              // final int winner = playRandomlyUntilEnd(posNew, player);
-              // // ok, we have an end state.
-              // if (winner == player) {
-              // // we win!
-              // numWin++;
-              // } else if (winner == opponent) {
-              // // we lose!
-              // numLose++;
-              // } else {
-              // numDraws++;
-              // }
-              // }
-              // score = (numWin - numLose - (DRAW_PENALTY * numDraws))
-              // / total_plays;
-              // score = -uncertaintyPenalty;
-              final int winner = posNew.isWinner();
-              if (winner == -1) {
-                score = heuristicScore(posNew, player);
-              } else {
-                score = winner;
-              }
-              searchResult.setIsResultFinal(false);
-            }
-          }
-          // System.out.println(searchResult.getBestScoreSoFar());
-          if (searchResult.getBestMoveSoFar() == null
-              || searchResult.getBestScoreSoFar() < score) {
-            searchResult.setBestMoveSoFar(pieceMove, score);
-            if (score == 1f)
-              break; // No need to search further if one can definitely win
-          }
-          alpha = Math.max(alpha, score);
-          if (alpha >= beta) {
-            break; // alpha-beta pruning
-          }
-          // System.out.println(searchResult.getBestScoreSoFar());
-        }
-        final long timeNow = System.nanoTime();
-        if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
-          // get OUT of here so we don't lose!!!
-          System.out.println("Time almost up, making any move we can!");
-          System.out
-              .println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
-                  + context.getMaxSearchTimeForThisPos()
-                  + ") :time("
-                  + timeNow
-                  + "): recDepth(" + context.getCurrentDepth() + ")");
-          if (context.getCurrentDepth() == 0) {
-            // Revert back to a lesser search
-            System.out.print("CheckersStrategy: Depth limit of "
-                + context.getMinDepthSearchForThisPos() + " -> ");
-            context.setMinDepthSearchForThisPos(context
-                .getMinDepthSearchForThisPos() - 1);
-            System.out.println(context.getMinDepthSearchForThisPos());
-          }
-          if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
-            searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(),
-                0.95f); // Set to original opponent almost-win
-          }
-          searchResult.setIsResultFinal(false);
-          break; // Need to make any move now
-        }
-
+      } else {
+        // iterate through the eight moves for the piece that isn't ours
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
+        iPos.increment();
       }
     }
+    pieceMoves.sort(new CheckersMoveComparator());
+    final boolean hasJump = hasJumps(position, destColorChecker, player);
+    for (final InterfaceIterator pieceMove : pieceMoves) {
+      // System.out.println("is in piece move loop");
+      if (isLegalMove(position, pieceMove, destColorChecker, player, hasJump)) {
+        // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
+        // + pieceMove.dC() + "," + pieceMove.dR() + " is legal move.");
+        if (searchResult.getBestMoveSoFar() == null)
+          searchResult.setBestMoveSoFar(pieceMove,
+              searchResult.getBestScoreSoFar());
+        posNew.setColor(pieceMove, player);
+        // System.out.println(pieceMove.iC() + "," + pieceMove.iR() + " to "
+        // + pieceMove.dC() + "," + pieceMove.dR());
+        final int isWin = posNew.isWinner(pieceMove); // iPos
+        float score;
+        if (isWin == player) {
+          score = 1f; // Win
+        } else if (isWin == 0) {
+          score = 0f; // Draw
+        } else if (isWin == opponent) {
+          score = -1f; // Loss
+        } else { // Game is not over, so check further down the game
+          if (context.getCurrentDepth() < context.getMaxDepthSearchForThisPos()
+              && // No more than max
+              context.getCurrentDepth() < context.getMinDepthSearchForThisPos()) { // No more than
+                                                                                   // min
+            posNew.setPlayer(opponent);
+            context.setCurrentDepth(context.getCurrentDepth() + 1);
+            final InterfaceSearchResult opponentResult = negamax(posNew,
+                context, -alpha, -beta); // Return information is in opponentContext
+            context.setCurrentDepth(context.getCurrentDepth() - 1);
+            score = -opponentResult.getBestScoreSoFar();
+            // Note, for player, opponent's best move has negative worth
+            // That is because, score = ((probability of win) - (probability of loss))
+
+            if (opponentResult.isResultFinal() == false) { // if the result is not final, reverse
+              // penalty
+              searchResult.setIsResultFinal(false);
+              score -= 2 * uncertaintyPenalty;
+            }
+          } else {
+            // We cannot recurse further down the minimax search
+            // play n random boards, collect score
+            // int numWin = 0;
+            // int numLose = 0;
+            // int numDraws = 0;
+            // final float total_plays = 30.0f; // change this if we ever want to play less or
+            // // // more
+            // for (int i = 0; i < total_plays; i++) {
+            // final int winner = playRandomlyUntilEnd(posNew, player);
+            // // ok, we have an end state.
+            // if (winner == player) {
+            // // we win!
+            // numWin++;
+            // } else if (winner == opponent) {
+            // // we lose!
+            // numLose++;
+            // } else {
+            // numDraws++;
+            // }
+            // }
+            // score = (numWin - numLose - (DRAW_PENALTY * numDraws))
+            // / total_plays;
+            // score = -uncertaintyPenalty;
+            final int winner = posNew.isWinner();
+            if (winner == -1) {
+              score = heuristicScore(posNew, player);
+            } else {
+              score = winner;
+            }
+            searchResult.setIsResultFinal(false);
+          }
+        }
+
+        // System.out.println(searchResult.getBestScoreSoFar());
+        if (searchResult.getBestMoveSoFar() == null
+            || searchResult.getBestScoreSoFar() < score) {
+          searchResult.setBestMoveSoFar(pieceMove, score);
+          // uncomment to hash
+          // checkedPositions.put(position.getRawPosition(), new CheckersMove(pieceMove, 1F));
+          // checkedPositions.put(position.getRawPosition(), new CheckersMove(
+          // pieceMove, score));
+          if (score == 1f)
+            break; // No need to search further if one can definitely win
+        }
+        alpha = Math.max(alpha, score);
+        if (alpha >= beta) {
+          break; // alpha-beta pruning
+        }
+        // System.out.println(searchResult.getBestScoreSoFar());
+      }
+      final long timeNow = System.nanoTime();
+      if (context.getMaxSearchTimeForThisPos() - timeNow <= 20000) {
+        // get OUT of here so we don't lose!!!
+        System.out.println("Time almost up, making any move we can!");
+        System.out
+            .println("CheckersStrategy:getBestMove(): ran out of time: maxTime("
+                + context.getMaxSearchTimeForThisPos()
+                + ") :time("
+                + timeNow
+                + "): recDepth(" + context.getCurrentDepth() + ")");
+        if (context.getCurrentDepth() == 0) {
+          // Revert back to a lesser search
+          System.out.print("CheckersStrategy: Depth limit of "
+              + context.getMinDepthSearchForThisPos() + " -> ");
+          context.setMinDepthSearchForThisPos(context
+              .getMinDepthSearchForThisPos() - 1);
+          System.out.println(context.getMinDepthSearchForThisPos());
+        }
+        if (((CheckersSearchContext) context).getOriginalPlayer() == opponent) {
+          searchResult.setBestMoveSoFar(searchResult.getBestMoveSoFar(), 0.95f); // Set to original
+                                                                                 // opponent
+                                                                                 // almost-win
+        }
+        searchResult.setIsResultFinal(false);
+        break; // Need to make any move now
+      }
+
+    }
+    // uncomment to hash
+    // }
     // System.out.println("Returning...");
     return searchResult;
 
